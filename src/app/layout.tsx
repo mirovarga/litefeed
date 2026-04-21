@@ -3,8 +3,8 @@ import type { Metadata } from "next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Reader",
-  description: "Newest stories from Lobsters and Hacker News",
+  title: "LiteFeed",
+  description: "A lightweight feed reader",
 }
 
 export default function RootLayout({

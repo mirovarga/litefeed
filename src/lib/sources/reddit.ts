@@ -60,8 +60,8 @@ function extractSummary(content: string): string | undefined {
   return text.length > 0 ? text : undefined
 }
 
-export async function fetchSubredditNewest(sub: string): Promise<Story[]> {
-  const res = await fetch(`https://www.reddit.com/r/${sub}/new.rss`, {
+export async function fetchSubredditHot(sub: string): Promise<Story[]> {
+  const res = await fetch(`https://www.reddit.com/r/${sub}/hot.rss`, {
     next: { revalidate: 300 },
     headers: { "user-agent": "litefeed/0.1 (github.com/mirovarga)" },
   })

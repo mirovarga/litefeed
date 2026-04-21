@@ -14,9 +14,9 @@ interface HnItem {
 
 const HN_LIMIT = 30
 
-export async function fetchHnNewest(): Promise<Story[]> {
+export async function fetchHnTop(): Promise<Story[]> {
   const idsRes = await fetch(
-    "https://hacker-news.firebaseio.com/v0/newstories.json",
+    "https://hacker-news.firebaseio.com/v0/topstories.json",
     { next: { revalidate: 300 } }
   )
   if (!idsRes.ok) {

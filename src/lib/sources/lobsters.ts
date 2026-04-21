@@ -11,8 +11,8 @@ interface LobstersStory {
   url: string
 }
 
-export async function fetchLobstersNewest(): Promise<Story[]> {
-  const res = await fetch("https://lobste.rs/newest.json", {
+export async function fetchLobstersHottest(): Promise<Story[]> {
+  const res = await fetch("https://lobste.rs/hottest.json", {
     next: { revalidate: 300 },
     headers: { "user-agent": "litefeed/0.1 (github.com/mirovarga)" },
   })

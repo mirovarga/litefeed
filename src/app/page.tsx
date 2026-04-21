@@ -2,9 +2,9 @@ import { Pagination } from "@/components/pagination"
 import { SortFilters } from "@/components/sort-filters"
 import { SourceFilters } from "@/components/source-filters"
 import { StoryList } from "@/components/story-list"
-import { fetchHnNewest } from "@/lib/sources/hn"
-import { fetchLobstersNewest } from "@/lib/sources/lobsters"
-import { fetchSubredditNewest, SUBREDDITS } from "@/lib/sources/reddit"
+import { fetchHnTop } from "@/lib/sources/hn"
+import { fetchLobstersHottest } from "@/lib/sources/lobsters"
+import { fetchSubredditHot, SUBREDDITS } from "@/lib/sources/reddit"
 import type { Order, Sort, SourceType, Story } from "@/lib/types"
 
 // TODO check what else can be added (images, ...)
@@ -17,7 +17,6 @@ import type { Order, Sort, SourceType, Story } from "@/lib/types"
 // TODO mobile friendly design/ux
 
 // TODO client side rendering, but sources are fetched on server side
-// TODO fetch hn and lobsters front pages
 
 const PAGE_SIZE = 20
 
@@ -69,11 +68,11 @@ async function settle<T>(
 
 async function loadStories(): Promise<{ stories: Story[]; errors: string[] }> {
   const sources = [
-    { key: "Lobsters", p: fetchLobstersNewest() },
-    { key: "HN", p: fetchHnNewest() },
+    { key: "Lobsters", p: fetchLobstersHottest() },
+    { key: "HN", p: fetchHnTop() },
     ...SUBREDDITS.map((s) => ({
       key: `r/${s}`,
-      p: fetchSubredditNewest(s),
+      p: fetchSubredditHot(s),
     })),
   ]
   const results = await Promise.all(sources.map((s) => settle(s.p)))

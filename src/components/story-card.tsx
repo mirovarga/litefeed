@@ -61,7 +61,9 @@ export function StoryCard({
             rel="noreferrer"
             target="_blank"
           >
-            {story.commentCount} comments
+            {story.commentCount == null
+              ? "comments"
+              : `${story.commentCount} comments`}
           </a>
           <span aria-hidden>·</span>
           <Badge render={<Link href={sourceHref} />} variant="secondary">

@@ -118,8 +118,8 @@ export default async function Page({
     .sort((a, b) => {
       if (sort === "comments") {
         return order === "desc"
-          ? b.commentCount - a.commentCount
-          : a.commentCount - b.commentCount
+          ? (b.commentCount ?? 0) - (a.commentCount ?? 0)
+          : (a.commentCount ?? 0) - (b.commentCount ?? 0)
       }
       return order === "desc"
         ? b.createdAt.getTime() - a.createdAt.getTime()

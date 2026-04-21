@@ -1,3 +1,4 @@
+import { XMLParser } from "fast-xml-parser"
 import type { Story } from "@/lib/types"
 
 export const SUBREDDITS = [
@@ -15,49 +16,83 @@ export const SUBREDDITS = [
   "selfhosted",
 ] as const
 
-interface RedditPost {
-  created_utc: number
+interface AtomEntry {
+  author: { name: string }
+  content: string | { "#text": string }
   id: string
-  num_comments: number
-  permalink: string
-  score: number
-  selftext?: string
-  stickied?: boolean
+  link: { "@_href": string }
+  published: string
   title: string
-  url: string
 }
 
-const REDDIT_LIMIT = 30
+function contentText(content: AtomEntry["content"]): string {
+  return typeof content === "string" ? content : (content["#text"] ?? "")
+}
+
+interface AtomFeed {
+  feed: { entry: AtomEntry | AtomEntry[] }
+}
+
+const parser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: "@_",
+})
+
+const LINK_RE = /href="([^"]+)">\[link\]/
+const MD_RE = /<div class="md">([\s\S]*?)<\/div>/
+const T3_RE = /^t3_/
+
+function extractArticleUrl(content: string, fallback: string): string {
+  const match = content.match(LINK_RE)
+  return match ? match[1] : fallback
+}
+
+function extractSummary(content: string): string | undefined {
+  const mdMatch = content.match(MD_RE)
+  if (!mdMatch) {
+    return
+  }
+  const text = mdMatch[1]
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&[^;]+;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+  return text.length > 0 ? text : undefined
+}
 
 export async function fetchSubredditNewest(sub: string): Promise<Story[]> {
-  const res = await fetch(
-    `https://www.reddit.com/r/${sub}/new.json?limit=${REDDIT_LIMIT}`,
-    {
-      next: { revalidate: 300 },
-      headers: { "user-agent": "litefeed/0.1 (github.com/mirovarga)" },
-    }
-  )
+  const res = await fetch(`https://www.reddit.com/r/${sub}/new.rss`, {
+    next: { revalidate: 300 },
+    headers: { "user-agent": "litefeed/0.1 (github.com/mirovarga)" },
+  })
   if (!res.ok) {
     throw new Error(`Reddit ${res.status} ${res.statusText}`)
   }
-  const json = (await res.json()) as {
-    data: { children: { data: RedditPost }[] }
+  const text = await res.text()
+  const data = parser.parse(text) as AtomFeed
+  const raw = data.feed.entry
+  let entries: AtomEntry[]
+  if (Array.isArray(raw)) {
+    entries = raw
+  } else if (raw) {
+    entries = [raw]
+  } else {
+    entries = []
   }
-  return json.data.children
-    .map((c) => c.data)
-    .filter((p) => !p.stickied)
-    .map((p) => {
-      const commentsUrl = `https://www.reddit.com${p.permalink}`
-      const selftext = p.selftext?.trim() ?? ""
+  return entries
+    .filter((e) => e.author.name !== "/u/AutoModerator")
+    .map((e) => {
+      const commentsUrl = e.link["@_href"]
+      const content = contentText(e.content)
+      const url = extractArticleUrl(content, commentsUrl)
       return {
-        id: p.id,
+        id: e.id.replace(T3_RE, ""),
         source: `r/${sub}`,
-        title: p.title,
-        url: p.url || commentsUrl,
+        title: e.title,
+        url,
         commentsUrl,
-        commentCount: p.num_comments,
-        createdAt: new Date(p.created_utc * 1000),
-        summary: selftext.length > 0 ? selftext : undefined,
+        createdAt: new Date(e.published),
+        summary: extractSummary(content),
       } satisfies Story
     })
 }

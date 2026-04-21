@@ -14,7 +14,7 @@ export type Sort = "time" | "comments"
 export type Order = "asc" | "desc"
 
 export interface Story {
-  commentCount: number
+  commentCount?: number
   commentsUrl: string
   createdAt: Date
   id: string
